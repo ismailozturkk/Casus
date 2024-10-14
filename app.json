@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Casus",
+    "name": "Casus Kim",
     "slug": "Casus",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,10 +18,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.smlztrkk.Casus"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1dbeae01-a9c2-41f0-a7c1-915405cf135a"
+      }
     }
   }
 }
