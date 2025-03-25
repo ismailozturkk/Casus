@@ -3,7 +3,15 @@ import React, { useContext, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Cards from "../components/Cards";
 import Settings from "./Settings";
-import wordData from "../jsons/words.json";
+import wordDataTr from "../jsons/tr.json";
+import wordDataAr from "../jsons/ar.json";
+import wordDataEn from "../jsons/en.json";
+import wordDataDe from "../jsons/de.json";
+import wordDataEs from "../jsons/es.json";
+import wordDataFr from "../jsons/fr.json";
+import wordDataZh from "../jsons/zh.json";
+import wordDataRu from "../jsons/ru.json";
+import language from "../language/language.json";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { MyContext } from "../MyProvider";
 import { StatusBar } from "expo-status-bar";
@@ -14,8 +22,17 @@ const Home = () => {
   const [name, setName] = useState("");
   const [start, setStart] = useState(false);
   const screenWidth = Dimensions.get("window").width;
-  const { color, setColor, category, colorStatusBar, setColorStatusBar } =
-    useContext(MyContext);
+  const {
+    color,
+    setColor,
+    category,
+    colorStatusBar,
+    setColorStatusBar,
+    value,
+  } = useContext(MyContext);
+
+  const value1 = Number(value);
+  const foundItemValue = language.Home.filter((item) => item.value === value1);
 
   const toastConfig = {
     tomatoToast: ({ text1, props }) => (
@@ -61,50 +78,70 @@ const Home = () => {
       </View>
     ),
   };
-
   createName = () => {
-    if (category.length > 0) {
-      let randomCategory = 10;
-
+    console.log(category);
+    if (category != [] && category.length > 0) {
+      let randomCategory = 7;
       do {
-        randomCategory = Math.floor(Math.random() * 11);
+        randomCategory = Math.floor(Math.random() * 8);
       } while (!category.includes(randomCategory));
-
+      let language;
       let data;
+      let value2 = Number(value);
+      switch (value2) {
+        case 1:
+          language = wordDataTr;
+          break;
+        case 2:
+          language = wordDataZh;
+          break;
+        case 3:
+          language = wordDataRu;
+          break;
+        case 4:
+          language = wordDataFr;
+          break;
+        case 5:
+          language = wordDataAr;
+          break;
+        case 6:
+          language = wordDataDe;
+          break;
+        case 7:
+          language = wordDataEs;
+          break;
+        default:
+          language = wordDataEn;
+          break;
+      }
 
       switch (randomCategory) {
         case 0:
-          data = wordData.vacation_spots;
+          data = language.items;
           break;
         case 1:
-          data = wordData.animals;
+          data = language.animals;
           break;
         case 2:
-          data = wordData.vehicles;
+          data = language.vehicles;
           break;
         case 3:
-          data = wordData.technology_devices;
+          data = language.famous_places;
           break;
         case 4:
-          data = wordData.foods;
+          data = language.foods;
           break;
         case 5:
-          data = wordData.sports_terms;
+          data = language.sports_terms;
           break;
         case 6:
-          data = wordData.weather;
+          data = language.professions;
           break;
         case 7:
-          data = wordData.professions;
-          break;
-        case 8:
-          data = wordData.countries;
-          break;
-        case 9:
-          data = wordData.geographical_terms;
+          data = language.countries;
           break;
         default:
-          data = wordData.items;
+          data = language.items;
           break;
       }
 
@@ -116,18 +153,19 @@ const Home = () => {
     } else {
       Toast.show({
         type: "errorToast",
-        text1: "En az bir tane kategor seçilmeli",
+        text1: foundItemValue[3].toast,
       });
     }
   };
+  //!const value1 = value ?? 0; // Eğer value undefined ise varsayılan değer olarak 0 atanır
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: color }]}>
       <LinearGradient colors={color} style={styles.containerLineer}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.textBack}>Casus Kim</Text>
-            <Text style={styles.text}>Casus Kim</Text>
+            <Text style={styles.textBack}>{foundItemValue[0].title}</Text>
+            <Text style={styles.text}>{foundItemValue[0].title}</Text>
           </View>
           <View style={styles.headerText}>
             <Text style={styles.textBackQ}>¿</Text>
@@ -147,9 +185,20 @@ const Home = () => {
                 ]);
                 setColorStatusBar("rgb(23, 37, 84)");
               }}
-              style={[styles.buttonBi, { width: screenWidth * 0.75 }]}
+              style={[{ width: screenWidth * 0.8 }]}
             >
-              <Text style={styles.buttonText}>Bitir</Text>
+              <LinearGradient
+                colors={[
+                  "rgba(0, 0, 0, 0)",
+                  "rgba(46, 213, 115, 0.5)",
+                  "rgba(46, 213, 115, 1)",
+                ]}
+                style={styles.gradient}
+              >
+                <Text style={styles.buttonTextBi}>
+                  {foundItemValue[2].name}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         ) : (
@@ -157,9 +206,21 @@ const Home = () => {
             <Settings />
             <TouchableOpacity
               onPress={() => createName()}
-              style={[styles.buttonBa, { width: screenWidth * 0.75 }]}
+              activeOpacity={0.8}
+              style={[{ width: screenWidth * 0.8 }]}
             >
-              <Text style={styles.buttonText}>Başla</Text>
+              <LinearGradient
+                colors={[
+                  "rgba(0, 0, 0, 0)",
+                  "rgba(46, 213, 115, 0.5)",
+                  "rgba(46, 213, 115, 1)",
+                ]}
+                style={styles.gradient}
+              >
+                <Text style={styles.buttonTextBa}>
+                  {foundItemValue[1].name}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         )}
@@ -196,7 +257,7 @@ const styles = StyleSheet.create({
   textBack: {
     position: "absolute",
     width: 400,
-    height: 80,
+    height: 100,
     color: "rgba(0, 0, 0,0.5)",
     textAlign: "center",
     fontSize: 68,
@@ -213,7 +274,7 @@ const styles = StyleSheet.create({
   },
   text: {
     width: 300,
-    height: 50,
+    height: 70,
     color: "white",
     textAlign: "center",
     fontSize: 48,
@@ -221,38 +282,42 @@ const styles = StyleSheet.create({
   },
   textQ: {
     width: 50,
-    height: 50,
+    height: 60,
     color: "rgb(178, 255, 89)",
     textAlign: "center",
     fontSize: 42,
     fontWeight: "700",
   },
-  buttonText: {
-    color: "black",
+  buttonTextBa: {
+    color: "rgb(203, 255, 225)",
     textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 3,
     fontSize: 16,
     fontWeight: "500",
   },
-  buttonBa: {
+  buttonTextBi: {
+    color: "rgb(203, 255, 225)",
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 3,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+
+  gradient: {
     width: "100%",
-    backgroundColor: "rgb(24, 255, 255)",
-    alignItems: "center",
-    justifyContent: "center",
+    height: 60,
     padding: 15,
     borderRadius: 15,
-  },
-  buttonBi: {
-    width: "100%",
-    backgroundColor: "rgb(0, 230, 118)",
     alignItems: "center",
     justifyContent: "center",
-    padding: 15,
-    borderRadius: 15,
   },
+
   info: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 20,
+    gap: 30,
   },
 });

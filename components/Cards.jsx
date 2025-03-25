@@ -7,6 +7,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
+import language from "../language/language.json";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { MyContext } from "../MyProvider";
 
@@ -17,8 +18,11 @@ const Cards = ({ name }) => {
   const [timer, setTimer] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const rotation = useSharedValue(180);
-  const { setColor } = useContext(MyContext);
-  const { time, users, spy, setColorStatusBar } = useContext(MyContext);
+  const { setColor, time, users, spy, setColorStatusBar, value } =
+    useContext(MyContext);
+
+  const value1 = Number(value);
+  const foundItemValue = language.Cards.filter((item) => item.value === value1);
 
   // Casus numaralarını rastgele üret
   const [spyNumbers, setSpyNumbers] = useState([]);
@@ -129,7 +133,9 @@ const Cards = ({ name }) => {
                         source={require("../assets/images/spy2.png")}
                         style={{ width: 100, height: 100 }}
                       />
-                      <Text style={styles.wordTextSpy}>Casus Sensin</Text>
+                      <Text style={styles.wordTextSpy}>
+                        {foundItemValue[0].spy}
+                      </Text>
                     </View>
                   ) : (
                     <Text style={styles.wordNameText}>{name}</Text>
@@ -164,10 +170,10 @@ const Cards = ({ name }) => {
       ) : (
         <View>
           {timeLeft == 0 ? (
-            <Text style={styles.wordText}>Süre Bitti</Text>
+            <Text style={styles.wordText}>{foundItemValue[1].time}</Text>
           ) : (
             <View style={styles.time}>
-              <Text style={styles.wordText}>Kalan Süre: </Text>
+              <Text style={styles.wordText}>{foundItemValue[2].remaining}</Text>
               <View
                 style={{
                   flexDirection: "row",
@@ -189,14 +195,33 @@ const Cards = ({ name }) => {
                   :{String(Math.floor((timeLeft % 1000) / 10)).padStart(2, "0")}
                 </Text>
               </View>
-              <View style={styles.ekle}>
-                <TouchableOpacity onPress={() => setTimeLeft(timeLeft + 60000)}>
-                  <Text style={styles.ekleText}>+ 1 Dk Ekle</Text>
+              <View style={styles.plus}>
+                <TouchableOpacity
+                  onPress={() => setTimeLeft(timeLeft - 300000)}
+                >
+                  <Text style={styles.minusText}>
+                    - 5 {foundItemValue[3].add}
+                  </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => setTimeLeft(timeLeft + 300000)}
                 >
-                  <Text style={styles.ekleText}>+ 5 Dk Ekle</Text>
+                  <Text style={styles.plusText}>
+                    + 5 {foundItemValue[3].add}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.minus}>
+                <TouchableOpacity onPress={() => setTimeLeft(timeLeft + 60000)}>
+                  <Text style={styles.plusText}>
+                    + 1 {foundItemValue[3].add}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setTimeLeft(timeLeft - 60000)}>
+                  <Text style={styles.minusText}>
+                    - 1 {foundItemValue[3].add}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -204,13 +229,23 @@ const Cards = ({ name }) => {
         </View>
       )}
       <View>
-        <Text style={styles.wordText}>Kişi Sayısı: {users + spy}</Text>
+        <Text style={styles.wordText}>
+          {foundItemValue[4].people}
+          {users + spy}
+        </Text>
         {countUser > users + spy ? (
-          <Text style={styles.wordText}>Casus sayısı: {spy}</Text>
+          <Text style={styles.wordText}>
+            {foundItemValue[5].spies}
+            {spy}
+          </Text>
         ) : Number.isInteger(countUser) ? (
-          <Text style={styles.wordText}>{countUser}. kullanıcı</Text>
+          <Text style={styles.wordText}>
+            {countUser}. {foundItemValue[6].user}
+          </Text>
         ) : (
-          <Text style={styles.wordText}>{countUser + 0.5}. kullanıcı</Text>
+          <Text style={styles.wordText}>
+            {countUser + 0.5}. {foundItemValue[6].user}
+          </Text>
         )}
       </View>
     </View>
@@ -268,18 +303,33 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "500",
   },
-  ekle: {
+  plus: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     margin: 10,
     gap: 10,
   },
-  ekleText: {
+  minus: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 10,
+    gap: 10,
+  },
+  plusText: {
     width: 100,
     backgroundColor: "rgb(0, 230, 118)",
     textAlign: "center",
     color: "black",
+    padding: 15,
+    borderRadius: 15,
+  },
+  minusText: {
+    width: 100,
+    backgroundColor: "rgb(244, 67, 54)",
+    textAlign: "center",
+    color: "white",
     padding: 15,
     borderRadius: 15,
   },

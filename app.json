@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "Casus Kim",
+    "name": "Who spy?",
     "slug": "Casus",
     "version": "1.0.0",
+    "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
@@ -28,6 +29,9 @@
       "eas": {
         "projectId": "1dbeae01-a9c2-41f0-a7c1-915405cf135a"
       }
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }

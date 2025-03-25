@@ -1,22 +1,252 @@
-import { Image, StyleSheet, Text, View, Pressable } from "react-native";
-import React, { useContext, useState } from "react";
-import { TouchableOpacity } from "react-native-gesture-handler";
-import Modal from "react-native-modal";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Modal,
+  TouchableOpacity,
+} from "react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+//import Modal from "react-native-modal";
 import { MyContext } from "../MyProvider";
 import { LinearGradient } from "expo-linear-gradient";
+import { Dropdown } from "react-native-element-dropdown";
+import language from "../language/language.json";
+import * as SQLite from "expo-sqlite";
 
 const Settings = () => {
+  const {
+    value,
+    setValue,
+    time,
+    setTime,
+    users,
+    setUsers,
+    spy,
+    setSpy,
+    setCategory,
+    category,
+  } = useContext(MyContext);
   const [isModalVisible1, setModalVisible1] = useState(false);
   const [isModalVisible2, setModalVisible2] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const Database = async (category) => {
+    const db = await SQLite.openDatabaseAsync("Data.db");
+    // `Record` tablosunda sadece bir satır olsun, ekle ya da güncelle
+    // `Record` tablosunda bir satır var mı?
+    const checkRecord = await db.getFirstAsync("SELECT * FROM Record LIMIT 1");
+    //todo güncelleme
+    const exampleCategories = category; // Array olarak veri
+    const categoriesString = JSON.stringify(exampleCategories);
+    if (checkRecord) {
+      // Eğer kayıt varsa, güncelle
+      await db.runAsync(
+        "UPDATE Record SET language = ?, categories = ? WHERE id = ?",
+        [0, categoriesString, checkRecord.id] // Yeni değerleri buraya ekleyebilirsiniz
+      );
+      console.log("Record güncellendi");
+    } else {
+      // Eğer kayıt yoksa, ekle
+      await db.runAsync(
+        "INSERT INTO Record (language, categories) VALUES (?, ?)",
+        [0, categoriesString] // Yeni değerleri buraya ekleyebilirsiniz
+      );
+      console.log("Record eklendi");
+    }
+  };
+  const updateRecord = async (value) => {
+    try {
+      const db = await SQLite.openDatabaseAsync("Data.db");
+      const checkRecord = await db.getFirstAsync(
+        "SELECT * FROM Record LIMIT 1"
+      );
+      //todo güncelleme
+      const exampleCategories = category;
+      const categoriesString = JSON.stringify(exampleCategories);
+      if (checkRecord) {
+        await db.runAsync(
+          "UPDATE Record SET language = ?, categories = ? WHERE id = ?",
+          [value, categoriesString, checkRecord.id]
+        );
+        const firstRecord = await db.getFirstAsync("SELECT * FROM Record");
+        console.log("Record:", firstRecord.language);
+        console.log("Record:", firstRecord.categories);
+        console.log("Record güncellendi");
+      } else {
+        const exampleCategories = category; // Array olarak veri
+        const categoriesString = JSON.stringify(exampleCategories);
+        await db.runAsync(
+          "INSERT INTO Record (language, categories) VALUES (?, ?)",
+          [0, categoriesString]
+        );
+        console.log("Record eklendi");
+      }
+    } catch (error) {
+      console.error("Veritabanı oluşturma hatası:", error);
+    }
+  };
+
+  const updateSetting = async () => {
+    try {
+      const db = await SQLite.openDatabaseAsync("Data.db");
+      const checkSettings = await db.getFirstAsync(
+        "SELECT * FROM Settings LIMIT 1"
+      );
+      //todo güncelleme
+
+      if (checkSettings) {
+        // Eğer kayıt varsa, güncelle
+        await db.runAsync(
+          "UPDATE Settings SET spy = ?, players = ?, time = ? WHERE id = ?",
+          [spy, users, time, checkSettings.id] // Yeni değerleri buraya ekleyebilirsiniz
+        );
+        console.log("Settings güncellendi");
+      } else {
+        // Eğer kayıt yoksa, ekle
+        await db.runAsync(
+          "INSERT INTO Settings (spy, players, time) VALUES (?, ?, ?)",
+          [1, 2, 3] // Yeni değerleri buraya ekleyebilirsiniz
+        );
+        console.log("Settings eklendi");
+      }
+      //todo yazdırma
+
+      // `Settings` tablosundaki ilk kaydı al ve konsola yazdır
+      const firstSettings = await db.getFirstAsync("SELECT * FROM Settings");
+      console.log("Settings:", firstSettings);
+    } catch (error) {
+      console.error("Veritabanı oluşturma hatası:", error);
+    }
+  };
+
+  const data = [
+    { label: "English", value: "0" },
+    { label: "Türkçe", value: "1" },
+    { label: "中文", value: "2" },
+    { label: "Русский", value: "3" },
+    { label: "Français", value: "4" },
+    { label: "العربية", value: "5" },
+    { label: "Deutsch", value: "6" },
+    { label: "Español", value: "7" },
+  ];
+  function getLabelByValue(value) {
+    // Verilen değeri string'e dönüştür
+    const stringValue = String(value);
+    // Dizide string karşılaştırması yap
+    const item = data.find((entry) => entry.value === stringValue);
+    return item ? item.label : "Value not found";
+  }
+  const translateLanguages = (language) => {
+    switch (language) {
+      case "1":
+        return [
+          { label: "İngilizce", value: "0" },
+          { label: "Türkçe", value: "1" },
+          { label: "Çince", value: "2" },
+          { label: "Rusça", value: "3" },
+          { label: "Fransızca", value: "4" },
+          { label: "Arapça", value: "5" },
+          { label: "Almanca", value: "6" },
+          { label: "İspanyolca", value: "7" },
+        ];
+      case "0":
+        return [
+          { label: "English", value: "0" },
+          { label: "Turkish", value: "1" },
+          { label: "Chinese", value: "2" },
+          { label: "Russian", value: "3" },
+          { label: "French", value: "4" },
+          { label: "Arabic", value: "5" },
+          { label: "German", value: "6" },
+          { label: "Spanish", value: "7" },
+        ];
+      case "2":
+        return [
+          { label: "英语", value: "0" },
+          { label: "土耳其语", value: "1" },
+          { label: "中文", value: "2" },
+          { label: "俄语", value: "3" },
+          { label: "法语", value: "4" },
+          { label: "阿拉伯语", value: "5" },
+          { label: "德语", value: "6" },
+          { label: "西班牙语", value: "7" },
+        ];
+      case "3":
+        return [
+          { label: "English", value: "0" },
+          { label: "Турецкий", value: "1" },
+          { label: "Китайский", value: "2" },
+          { label: "Русский", value: "3" },
+          { label: "Французский", value: "4" },
+          { label: "Арабский", value: "5" },
+          { label: "Немецкий", value: "6" },
+          { label: "Испанский", value: "7" },
+        ];
+      case "4":
+        return [
+          { label: "Anglais", value: "0" },
+          { label: "Turc", value: "1" },
+          { label: "Chinois", value: "2" },
+          { label: "Russe", value: "3" },
+          { label: "Français", value: "4" },
+          { label: "Arabe", value: "5" },
+          { label: "Allemand", value: "6" },
+          { label: "Espagnol", value: "7" },
+        ];
+      case "5":
+        return [
+          { label: "الإنجليزية", value: "0" },
+          { label: "التركية", value: "1" },
+          { label: "الصينية", value: "2" },
+          { label: "الروسية", value: "3" },
+          { label: "الفرنسية", value: "4" },
+          { label: "العربية", value: "5" },
+          { label: "الألمانية", value: "6" },
+          { label: "الإسبانية", value: "7" },
+        ];
+      case "6":
+        return [
+          { label: "Englisch", value: "0" },
+          { label: "Türkisch", value: "1" },
+          { label: "Chinesisch", value: "2" },
+          { label: "Russisch", value: "3" },
+          { label: "Französisch", value: "4" },
+          { label: "Arabisch", value: "5" },
+          { label: "Deutsch", value: "6" },
+          { label: "Spanisch", value: "7" },
+        ];
+      case "7":
+        return [
+          { label: "Inglés", value: "0" },
+          { label: "Turco", value: "1" },
+          { label: "Chino", value: "2" },
+          { label: "Ruso", value: "3" },
+          { label: "Francés", value: "4" },
+          { label: "Árabe", value: "5" },
+          { label: "Alemán", value: "6" },
+          { label: "Español", value: "7" },
+        ];
+      default:
+        return data;
+    }
+  };
+  useEffect(() => {
+    const timeout = setTimeout(() => setIsReady(true), 1000); // Modal açılmadan önce 100ms bekleyebilir
+    return () => clearTimeout(timeout);
+  }, [isModalVisible1]);
+
+  const value1 = Number(value);
+  const foundItemValue = language.Setting.filter(
+    (item) => item.value === value1
+  );
+
   const toggleModal1 = () => {
     setModalVisible1(!isModalVisible1);
   };
   const toggleModal2 = () => {
     setModalVisible2(!isModalVisible2);
   };
-  const { time, setTime, users, setUsers, spy, setSpy, setCategory, category } =
-    useContext(MyContext);
-
   const Category = () => {
     return (
       <View style={styles.container}>
@@ -24,25 +254,52 @@ const Settings = () => {
           <Pressable
             style={[
               styles.buttonCategory,
-              category.includes(10)
+              category.includes(0)
                 ? { backgroundColor: "rgb(174, 213, 129)" }
                 : { backgroundColor: "rgb(229, 115, 115)" },
             ]}
             onPress={() => {
-              if (category.includes(10)) {
-                setCategory(category.filter((item) => item !== 10)); // 10 varsa çıkar
+              if (category.includes(0)) {
+                console.log("0");
+                if (typeof category == "string") {
+                  console.log("1");
+                  const categoryArray = JSON.parse(category);
+                  console.log("category değeri:", category);
+                  console.log("category türü:", typeof category);
+                  Database(categoryArray.filter((item) => item !== 0));
+                  setCategory([0, 1, 2, 3, 4, 5, 6, 7]);
+                  console.log("category değeri:", categoryArray);
+                  console.log("category türü:", typeof categoryArray);
+
+                  console.log(Array.isArray(categoryArray));
+                  setCategory(categoryArray.filter((item) => item !== 0));
+                } else {
+                  console.log("2");
+                  Database(category.filter((item) => item !== 0));
+
+                  setCategory(category.filter((item) => item !== 0));
+                }
               } else {
-                setCategory([...category, 10]); // 10 yoksa ekle
+                console.log("3");
+                if (typeof category == "string") {
+                  console.log("4");
+
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 0]);
+                  Database([...categoryArray, 0]);
+                } else {
+                  console.log("5");
+                  setCategory([...category, 0]);
+                  Database([...category, 0]);
+                }
               }
             }}
           >
-            <View>
-              <Image
-                source={require("../assets/categoryImages/recognition.png")}
-                style={styles.img}
-              />
-              <Text style={styles.categoryText}>Eşyalar</Text>
-            </View>
+            <Image
+              source={require("../assets/categoryImages/recognition.png")}
+              style={styles.img}
+            />
+            <Text style={styles.categoryText}>{foundItemValue[7].items}</Text>
           </Pressable>
           <Pressable
             style={[
@@ -53,9 +310,19 @@ const Settings = () => {
             ]}
             onPress={() => {
               if (category.includes(1)) {
-                setCategory(category.filter((item) => item !== 1)); // 10 varsa çıkar
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory(categoryArray.filter((item) => item !== 1));
+                } else {
+                  setCategory(category.filter((item) => item !== 1));
+                }
               } else {
-                setCategory([...category, 1]); // 10 yoksa ekle
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 1]);
+                } else {
+                  setCategory([...category, 1]);
+                }
               }
             }}
           >
@@ -63,7 +330,7 @@ const Settings = () => {
               source={require("../assets/categoryImages/paws.png")}
               style={styles.img}
             />
-            <Text style={styles.categoryText}>Hayvanlar</Text>
+            <Text style={styles.categoryText}>{foundItemValue[8].animals}</Text>
           </Pressable>
           <Pressable
             style={[
@@ -74,9 +341,19 @@ const Settings = () => {
             ]}
             onPress={() => {
               if (category.includes(2)) {
-                setCategory(category.filter((item) => item !== 2)); // 10 varsa çıkar
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory(categoryArray.filter((item) => item !== 2));
+                } else {
+                  setCategory(category.filter((item) => item !== 2));
+                }
               } else {
-                setCategory([...category, 2]); // 10 yoksa ekle
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 2]);
+                } else {
+                  setCategory([...category, 2]);
+                }
               }
             }}
           >
@@ -84,7 +361,9 @@ const Settings = () => {
               source={require("../assets/categoryImages/travelling-vehicles-of-a-road.png")}
               style={styles.img}
             />
-            <Text style={styles.categoryText}>Araçlar</Text>
+            <Text style={styles.categoryText}>
+              {foundItemValue[9].vehicles}
+            </Text>
           </Pressable>
         </View>
         <View style={styles.category}>
@@ -97,17 +376,27 @@ const Settings = () => {
             ]}
             onPress={() => {
               if (category.includes(3)) {
-                setCategory(category.filter((item) => item !== 3)); // 10 varsa çıkar
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory(categoryArray.filter((item) => item !== 3));
+                } else {
+                  setCategory(category.filter((item) => item !== 3));
+                }
               } else {
-                setCategory([...category, 3]); // 10 yoksa ekle
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 3]);
+                } else {
+                  setCategory([...category, 3]);
+                }
               }
             }}
           >
             <Image
-              source={require("../assets/categoryImages/technology.png")}
+              source={require("../assets/categoryImages/beach.png")}
               style={styles.img}
             />
-            <Text style={styles.categoryText}>Teknolojik Aletler</Text>
+            <Text style={styles.categoryText}>{foundItemValue[10].places}</Text>
           </Pressable>
           <Pressable
             style={[
@@ -118,9 +407,19 @@ const Settings = () => {
             ]}
             onPress={() => {
               if (category.includes(4)) {
-                setCategory(category.filter((item) => item !== 4)); // 10 varsa çıkar
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory(categoryArray.filter((item) => item !== 4));
+                } else {
+                  setCategory(category.filter((item) => item !== 4));
+                }
               } else {
-                setCategory([...category, 4]); // 10 yoksa ekle
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 4]);
+                } else {
+                  setCategory([...category, 4]);
+                }
               }
             }}
           >
@@ -128,7 +427,7 @@ const Settings = () => {
               source={require("../assets/categoryImages/dinner.png")}
               style={styles.img}
             />
-            <Text style={styles.categoryText}>Yemekler</Text>
+            <Text style={styles.categoryText}>{foundItemValue[11].foods}</Text>
           </Pressable>
           <Pressable
             style={[
@@ -139,9 +438,19 @@ const Settings = () => {
             ]}
             onPress={() => {
               if (category.includes(5)) {
-                setCategory(category.filter((item) => item !== 5)); // 10 varsa çıkar
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory(categoryArray.filter((item) => item !== 5));
+                } else {
+                  setCategory(category.filter((item) => item !== 5));
+                }
               } else {
-                setCategory([...category, 5]); // 10 yoksa ekle
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 5]);
+                } else {
+                  setCategory([...category, 5]);
+                }
               }
             }}
           >
@@ -149,7 +458,7 @@ const Settings = () => {
               source={require("../assets/categoryImages/balls-sports.png")}
               style={styles.img}
             />
-            <Text style={styles.categoryText}>Spor Terimleri</Text>
+            <Text style={styles.categoryText}>{foundItemValue[12].sports}</Text>
           </Pressable>
         </View>
         <View style={styles.category}>
@@ -162,17 +471,29 @@ const Settings = () => {
             ]}
             onPress={() => {
               if (category.includes(6)) {
-                setCategory(category.filter((item) => item !== 6)); // 10 varsa çıkar
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory(categoryArray.filter((item) => item !== 6));
+                } else {
+                  setCategory(category.filter((item) => item !== 6));
+                }
               } else {
-                setCategory([...category, 6]); // 10 yoksa ekle
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 6]);
+                } else {
+                  setCategory([...category, 6]);
+                }
               }
             }}
           >
             <Image
-              source={require("../assets/categoryImages/cloudy-day.png")}
+              source={require("../assets/categoryImages/employee.png")}
               style={styles.img}
             />
-            <Text style={styles.categoryText}>Hava Durumları</Text>
+            <Text style={styles.categoryText}>
+              {foundItemValue[13].profession}
+            </Text>
           </Pressable>
           <Pressable
             style={[
@@ -183,30 +504,19 @@ const Settings = () => {
             ]}
             onPress={() => {
               if (category.includes(7)) {
-                setCategory(category.filter((item) => item !== 7)); // 10 varsa çıkar
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory(categoryArray.filter((item) => item !== 7));
+                } else {
+                  setCategory(category.filter((item) => item !== 7));
+                }
               } else {
-                setCategory([...category, 7]); // 10 yoksa ekle
-              }
-            }}
-          >
-            <Image
-              source={require("../assets/categoryImages/employee.png")}
-              style={styles.img}
-            />
-            <Text style={styles.categoryText}>Meslekler</Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.buttonCategory,
-              category.includes(8)
-                ? { backgroundColor: "rgb(174, 213, 129)" }
-                : { backgroundColor: "rgb(229, 115, 115)" },
-            ]}
-            onPress={() => {
-              if (category.includes(8)) {
-                setCategory(category.filter((item) => item !== 8)); // 10 varsa çıkar
-              } else {
-                setCategory([...category, 8]); // 10 yoksa ekle
+                if (typeof category == "string") {
+                  const categoryArray = JSON.parse(category);
+                  setCategory([...categoryArray, 7]);
+                } else {
+                  setCategory([...category, 7]);
+                }
               }
             }}
           >
@@ -214,51 +524,9 @@ const Settings = () => {
               source={require("../assets/categoryImages/coronavirus.png")}
               style={styles.img}
             />
-            <Text style={styles.categoryText}>Ülkeler</Text>
-          </Pressable>
-        </View>
-        <View style={styles.category}>
-          <Pressable
-            style={[
-              styles.buttonCategory,
-              category.includes(9)
-                ? { backgroundColor: "rgb(174, 213, 129)" }
-                : { backgroundColor: "rgb(229, 115, 115)" },
-            ]}
-            onPress={() => {
-              if (category.includes(9)) {
-                setCategory(category.filter((item) => item !== 9)); // 10 varsa çıkar
-              } else {
-                setCategory([...category, 9]); // 10 yoksa ekle
-              }
-            }}
-          >
-            <Image
-              source={require("../assets/categoryImages/geographic.png")}
-              style={styles.img}
-            />
-            <Text style={styles.categoryText}>Coğrafik Terimler</Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.buttonCategory,
-              category.includes(0)
-                ? { backgroundColor: "rgb(174, 213, 129)" }
-                : { backgroundColor: "rgb(229, 115, 115)" },
-            ]}
-            onPress={() => {
-              if (category.includes(0)) {
-                setCategory(category.filter((item) => item !== 0)); // 10 varsa çıkar
-              } else {
-                setCategory([...category, 0]); // 10 yoksa ekle
-              }
-            }}
-          >
-            <Image
-              source={require("../assets/categoryImages/beach.png")}
-              style={styles.img}
-            />
-            <Text style={styles.categoryText}>Tatil Yerleri</Text>
+            <Text style={styles.categoryText}>
+              {foundItemValue[14].country}
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -269,9 +537,40 @@ const Settings = () => {
     return (
       <View style={styles.container}>
         <View style={styles.categorySetting}>
-          <View style={styles.buttonGroup}>
+          <View style={styles.buttonGroupL}>
             <View>
-              <Text style={styles.settingText}>Casus Sayısı: </Text>
+              <Text style={styles.settingText}>
+                {foundItemValue[2].language}
+              </Text>
+            </View>
+            <View>
+              <Dropdown
+                style={styles.dropdown}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                itemContainerStyle={styles.itemContainerStyle}
+                itemTextStyle={styles.itemTextStyle}
+                containerStyle={styles.containerStyle}
+                activeColor="rgb(0, 230, 118)"
+                iconStyle={styles.iconStyle}
+                data={translateLanguages(value)}
+                search={false}
+                maxHeight={300}
+                labelField="label"
+                valueField="value"
+                placeholder={getLabelByValue(value)}
+                value={value}
+                onChange={(item) => {
+                  setValue(item.value);
+                  console.log(item.value);
+                  updateRecord(item.value);
+                }}
+              />
+            </View>
+          </View>
+          <View style={styles.settingGroup}>
+            <View>
+              <Text style={styles.settingText}>{foundItemValue[3].spies}</Text>
             </View>
 
             <View style={styles.buttonGroup}>
@@ -279,7 +578,7 @@ const Settings = () => {
                 style={styles.buttonSettingM}
                 onPress={() => setSpy(spy > 1 ? spy - 1 : 1)} // spy-- yerine setSpy(spy - 1)
               >
-                <Text style={styles.categoryTextM}>-</Text>
+                <Text style={styles.categoryTextM}>−</Text>
               </Pressable>
               <LinearGradient
                 colors={[
@@ -302,14 +601,14 @@ const Settings = () => {
               </Pressable>
             </View>
           </View>
-          <View style={styles.buttonGroup}>
-            <Text style={styles.settingText}>Oyuncu Sayısı</Text>
+          <View style={styles.settingGroup}>
+            <Text style={styles.settingText}>{foundItemValue[4].player}</Text>
             <View style={styles.buttonGroup}>
               <Pressable
                 style={styles.buttonSettingM}
                 onPress={() => setUsers(users > 2 ? users - 1 : 2)} // spy-- yerine setSpy(spy - 1)
               >
-                <Text style={styles.categoryTextM}>-</Text>
+                <Text style={styles.categoryTextM}>−</Text>
               </Pressable>
               <LinearGradient
                 colors={[
@@ -333,13 +632,13 @@ const Settings = () => {
             </View>
           </View>
           <View style={styles.buttonGroup}>
-            <Text style={styles.settingText}>Süre (dk)</Text>
+            <Text style={styles.settingText}>{foundItemValue[5].time}</Text>
             <View style={styles.buttonGroup}>
               <Pressable
                 style={styles.buttonSettingM}
                 onPress={() => setTime(time > 1 ? time - 1 : 1)} // spy-- yerine setSpy(spy - 1)
               >
-                <Text style={styles.categoryTextM}>-</Text>
+                <Text style={styles.categoryTextM}>−</Text>
               </Pressable>
               <LinearGradient
                 colors={[
@@ -363,11 +662,9 @@ const Settings = () => {
             </View>
           </View>
           <View style={styles.Inf}>
-            <Text style={styles.categoryTextInf}>
-              Toplam Kişi sayısı: {spy + users}
-            </Text>
-            <Text style={styles.categoryTextInf}>
-              Oyun süresi: {time} dakika
+            <Text style={styles.categoryTextInfUser}>
+              {foundItemValue[6].people}
+              {spy + users}
             </Text>
           </View>
         </View>
@@ -386,7 +683,9 @@ const Settings = () => {
             source={require("../assets/categoryImages/menu.png")}
             style={styles.img}
           />
-          <Text style={styles.categoryText}>Katagoriler</Text>
+          <Text style={styles.categoryText}>
+            {foundItemValue[0].categories}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.button}
@@ -396,44 +695,110 @@ const Settings = () => {
             source={require("../assets/categoryImages/control.png")}
             style={styles.img}
           />
-          <Text style={styles.categoryText}>Ayarlar</Text>
+          <Text style={styles.categoryText}>{foundItemValue[1].settings}</Text>
         </TouchableOpacity>
       </View>
       <Modal
-        isVisible={isModalVisible1}
-        onSwipeComplete={toggleModal1}
-        onBackdropPress={() => setModalVisible1(false)}
-        backdropOpacity={0.4}
-        swipeDirection="down"
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        style={styles.modal}
+        animationType="slide"
+        visible={isModalVisible1} // isVisible yerine visible kullanılıyor
+        onRequestClose={toggleModal1} // onSwipeComplete yerine onRequestClose kullanılıyor
+        transparent={true} // Arka planı şeffaf yapmak için
       >
-        <LinearGradient
-          colors={["rgb(30, 64, 175)", "rgb(30, 58, 138)", "rgb(23, 37, 84)"]}
-          style={styles.modalContainer}
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "flex-end",
+            alignItems: "center",
+            backgroundColor: "tranparent",
+          }}
         >
-          <View style={styles.modalRol} />
-          <Category />
-        </LinearGradient>
+          <LinearGradient
+            colors={[
+              "rgba(0, 0, 0,0)",
+              "rgba(0, 0, 0,0.3)",
+              "rgba(0, 0, 0,0.6)",
+              "rgba(0, 0, 0,0.7)",
+              "rgba(0, 0, 0,0.7)",
+            ]}
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              left: 0,
+              bottom: 0,
+              width: "100%",
+            }}
+          />
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              left: 0,
+              bottom: 0,
+              width: "100%",
+            }}
+            onPress={() => setModalVisible1(false)}
+          />
+          <LinearGradient
+            colors={["rgb(30, 64, 175)", "rgb(30, 58, 138)", "rgb(23, 37, 84)"]}
+            style={styles.modalContainer}
+          >
+            <View style={styles.modalRol} />
+            <Category />
+          </LinearGradient>
+        </View>
       </Modal>
       <Modal
-        isVisible={isModalVisible2}
-        onSwipeComplete={toggleModal2}
-        onBackdropPress={() => setModalVisible2(false)}
-        backdropOpacity={0.4}
-        swipeDirection="down"
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        style={styles.modal}
+        animationType="slide"
+        visible={isModalVisible2} // isVisible yerine visible kullanılıyor
+        onRequestClose={toggleModal2} // onSwipeComplete yerine onRequestClose kullanılıyor
+        transparent={true} // Arka planı şeffaf yapmak için
       >
-        <LinearGradient
-          colors={["rgb(30, 64, 175)", "rgb(30, 58, 138)", "rgb(23, 37, 84)"]}
-          style={styles.modalContainer}
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "flex-end",
+            alignItems: "center",
+            backgroundColor: "tranparent",
+          }}
         >
-          <View style={styles.modalRol} />
-          <Setting />
-        </LinearGradient>
+          <LinearGradient
+            colors={[
+              "rgba(0, 0, 0,0)",
+              "rgba(0, 0, 0,0.3)",
+              "rgba(0, 0, 0,0.6)",
+              "rgba(0, 0, 0,0.7)",
+              "rgba(0, 0, 0,0.7)",
+            ]}
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              left: 0,
+              bottom: 0,
+              width: "100%",
+            }}
+          />
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              left: 0,
+              bottom: 0,
+              width: "100%",
+            }}
+            onPress={() => setModalVisible2(false)}
+          />
+          <LinearGradient
+            colors={["rgb(30, 64, 175)", "rgb(30, 58, 138)", "rgb(23, 37, 84)"]}
+            style={styles.modalContainer}
+          >
+            <View style={styles.modalRol} />
+            <Setting />
+          </LinearGradient>
+        </View>
       </Modal>
     </View>
   );
@@ -452,7 +817,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  settingGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
   buttonGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  settingGroupL: {},
+  buttonGroupL: {
+    width: "85%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -464,27 +842,46 @@ const styles = StyleSheet.create({
   },
   categorySetting: {
     gap: 20,
-    margin: 5,
+    padding: 20,
   },
   buttonCategory: {
-    width: 90,
-    height: 90,
-    borderRadius: 15,
-    padding: 10,
-    gap: 5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  img: { width: 40, height: 40 },
-  button: {
-    width: 90,
-    height: 90,
+    width: 100,
+    height: 100,
     borderRadius: 15,
     padding: 10,
     gap: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgb(0, 230, 118)",
+  },
+  img: { width: 50, height: 50 },
+  button: {
+    width: 150,
+    height: 120,
+    borderRadius: 15,
+    padding: 10,
+    gap: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgb(255, 255, 120)",
+  },
+  buttonSettingAL: {
+    width: "40%",
+    height: 40,
+    borderTopLeftRadius: 15,
+    borderBottomLeftRadius: 15,
+    borderRightWidth: 3,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgb(144, 164, 174)",
+  },
+  buttonSettingCL: {
+    width: "40%",
+    height: 40,
+    borderTopRightRadius: 15,
+    borderBottomRightRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgb(144, 164, 174)",
   },
   buttonSettingM: {
     width: 40,
@@ -504,7 +901,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgb(74, 222, 128)",
   },
-  categoryText: { color: "black" },
+  categoryText: { color: "black", textAlign: "center" },
   settingText: { color: "white" },
   settingTextNumber: {
     fontSize: 18,
@@ -512,7 +909,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   textView: {
-    width: 50,
+    width: 70,
     height: 40,
     textAlign: "center",
     justifyContent: "center",
@@ -521,9 +918,10 @@ const styles = StyleSheet.create({
 
   categoryTextM: {
     color: "balck",
-    fontSize: 38,
-    fontWeight: "400",
+    fontSize: 28,
+    fontWeight: "500",
     textAlign: "center",
+    textAlignVertical: "center",
   },
   categoryTextP: {
     color: "balck",
@@ -531,12 +929,13 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     textAlign: "center",
   },
-  categoryTextInf: {
+
+  categoryTextInfUser: {
     color: "rgb(14, 165, 233)",
-    textAlign: "center",
+    width: "90%",
     fontSize: 16,
+    textAlign: "center",
     fontWeight: "600",
-    margin: 0,
   },
   Inf: {
     flexDirection: "row",
@@ -547,7 +946,6 @@ const styles = StyleSheet.create({
   modal: {
     alignItems: "center",
     justifyContent: "flex-end",
-    margin: 0,
   },
 
   modalContainer: {
@@ -586,5 +984,55 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 5,
+  },
+  dropdown: {
+    height: 40,
+    width: 120,
+    justifyContent: "center",
+    alignItems: "center",
+    borderBottomColor: "gray",
+    borderBottomWidth: 0.5,
+  },
+  icon: {
+    marginRight: 5,
+  },
+  placeholderStyle: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  selectedTextStyle: {
+    color: "white",
+    height: 20,
+    textAlign: "center",
+    fontSize: 16,
+  },
+  itemContainerStyle: {
+    height: 35,
+    backgroundColor: "rgb(148, 163, 184)",
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: "rgba(148, 163, 184,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemTextStyle: {
+    height: 20,
+    fontSize: 16,
+    color: "black",
+    textAlign: "center",
+  },
+  containerStyle: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    borderRadius: 20,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
   },
 });
